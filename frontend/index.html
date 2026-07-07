@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能简历分析系统</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --success-light: #ecfdf5;
+    --warning: #f59e0b;
+    --warning-light: #fffbeb;
+    --error: #ef4444;
+    --error-light: #fef2f2;
+    --radius: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #312e81 0%, #4f46e5 40%, #7c3aed 100%);
+    color: white;
+    padding: 48px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to top, var(--bg), transparent);
+  }
+  .header h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .header p { opacity: 0.85; font-size: 16px; font-weight: 400; max-width: 600px; margin: 0 auto; }
+
+  /* Layout */
+  .container {
+    max-width: 1200px;
+    margin: -20px auto 0;
+    padding: 0 24px 40px;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .container { grid-template-columns: 1fr; }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+  .card h2 .icon { font-size: 20px; }
+  .card-full { grid-column: 1 / -1; }
+
+  /* Upload area */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .upload-zone .upload-icon { font-size: 42px; margin-bottom: 10px; }
+  .upload-zone p { color: var(--text-secondary); font-size: 14px; }
+  .upload-zone .file-name { color: var(--primary); font-weight: 600; margin-top: 8px; font-size: 14px; }
+  #fileInput { display: none; }
+
+  /* Textarea */
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.7;
+    resize: vertical;
+    transition: border-color 0.2s;
+    background: #fafbfc;
+  }
+  textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: white;
+    width: 100%;
+    margin-top: 16px;
+  }
+  .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-outline {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { background: var(--bg); }
+
+  /* Status */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .status-bar.error { background: var(--error-light); color: var(--error); }
+  .status-bar.success { background: var(--success-light); color: var(--success); }
+  .status-bar.warning { background: var(--warning-light); color: #b45309; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid #c7d2fe;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* API Config */
+  .api-config {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .api-config input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fafbfc;
+  }
+  .api-config input:focus { outline: none; border-color: var(--primary); }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.active { background: var(--primary); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  }
+  .toggle.active::after { transform: translateX(20px); }
+
+  .hidden { display: none !important; }
+
+  /* ---- Results Styles ---- */
+
+  /* Score Dashboard */
+  .score-dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 768px) {
+    .score-dashboard { grid-template-columns: repeat(2, 1fr); }
+  }
+  .score-card {
+    text-align: center;
+    padding: 20px 12px;
+    border-radius: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .score-card .score-value {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .score-card .score-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .score-card.overall { background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-color: #c7d2fe; }
+  .score-card.overall .score-value { color: var(--primary); }
+  .score-card.skill { background: var(--success-light); border-color: #a7f3d0; }
+  .score-card.skill .score-value { color: var(--success); }
+  .score-card.exp { background: var(--warning-light); border-color: #fde68a; }
+  .score-card.exp .score-value { color: var(--warning); }
+  .score-card.edu { background: #fdf2f8; border-color: #fbcfe8; }
+  .score-card.edu .score-value { color: #db2777; }
+
+  /* Section */
+  .result-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .result-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .result-section h3 .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: inline-block;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .info-item .info-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .info-item .info-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  /* Tags */
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .tag-match { background: #d1fae5; color: #065f46; }
+  .tag-miss { background: #fee2e2; color: #991b1b; }
+  .tag-skill { background: var(--primary-light); color: var(--primary); }
+  .tag-neutral { background: #f1f5f9; color: #475569; }
+
+  /* Analysis text */
+  .analysis-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    background: var(--bg);
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 3px solid var(--primary);
+  }
+  .analysis-text p { margin-bottom: 10px; }
+  .analysis-text p:last-child { margin-bottom: 0; }
+
+  /* Recommendation block */
+  .recommendation-box {
+    background: linear-gradient(135deg, #eef2ff, #faf5ff);
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .recommendation-box strong { color: var(--primary); }
+
+  /* Lists */
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+  }
+  .bullet-list li {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .bullet-list li.strength { background: var(--success-light); color: #065f46; }
+  .bullet-list li.gap { background: var(--error-light); color: #991b1b; }
+  .bullet-list li.suggestion { background: var(--primary-light); color: var(--primary); }
+
+  /* Experience cards */
+  .exp-card {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .exp-card .exp-title { font-weight: 600; font-size: 14px; color: var(--text); }
+  .exp-card .exp-subtitle { font-size: 13px; color: var(--text-secondary); margin: 2px 0 6px; }
+  .exp-card .exp-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* Debug */
+  .debug-section { margin-top: 20px; }
+  .debug-toggle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px 0;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .debug-toggle:hover { color: var(--primary); }
+  .debug-content {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Level badge */
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AI 智能简历分析系统</h1>
+  <p>上传简历 PDF，输入岗位需求，AI 自动解析候选人信息并生成详细的匹配评估报告</p>
+</div>
+
+<div class="container">
+
+  <!-- 左侧：上传区 -->
+  <div class="card">
+    <h2><span class="icon">&#x1F4C4;</span> 简历上传与分析</h2>
+
+    <div class="api-config">
+      <label>API:</label>
+      <input type="text" id="apiBaseUrl" value="" placeholder="请输入后端 API 地址，例如 https://xxx.fc.aliyuncs.com">
+      <button class="btn btn-sm btn-outline" onclick="saveApiUrl()">保存</button>
+    </div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">&#x1F4C1;</div>
+      <p>点击上传或拖拽 PDF 简历文件到此处</p>
+      <p style="font-size:12px;margin-top:4px;">支持 .pdf 格式，最大 10MB，文本型 PDF 效果最佳</p>
+      <div class="file-name" id="fileName"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" onchange="handleFileSelect(event)">
+
+    <div id="uploadStatus" class="status-bar hidden"></div>
+    <button class="btn btn-primary" id="uploadBtn" onclick="uploadResume()" disabled>
+      &#x1F4E4; 上传并解析简历
+    </button>
+  </div>
+
+  <!-- 右侧：岗位匹配 -->
+  <div class="card">
+    <h2><span class="icon">&#x1F3AF;</span> 岗位匹配评估</h2>
+    <label style="font-size:14px;font-weight:600;display:block;margin-bottom:8px;color:var(--text);">岗位需求描述</label>
+    <textarea id="jobDescription" placeholder="粘贴岗位 JD，描述越详细匹配越精准。例如：
+
+岗位名称：高级 Python 后端工程师
+岗位职责：
+1. 负责公司核心业务系统的架构设计与开发
+2. 参与微服务治理、性能优化
+任职要求：
+- 5年以上 Python 开发经验，熟悉 Django/Flask
+- 有大规模分布式系统设计经验
+- 熟悉 MySQL、Redis、Kafka 等中间件
+- 本科及以上学历，计算机相关专业优先"></textarea>
+
+    <div class="toggle-row">
+      <div class="toggle active" id="aiToggle" onclick="toggleAI()"></div>
+      <span>启用 AI 语义分析（更精准详细）</span>
+    </div>
+
+    <button class="btn btn-primary" id="matchBtn" onclick="matchResume()" disabled>
+      &#x1F50D; 开始匹配分析
+    </button>
+    <div id="matchStatus" class="status-bar hidden" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- 底部：结果展示 -->
+  <div class="card card-full hidden" id="resultCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="margin:0;"><span class="icon">&#x1F4CA;</span> 分析报告</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;color:var(--text-secondary);" id="extractionMethod"></span>
+        <button class="btn btn-sm btn-outline" onclick="clearResults()">清除结果</button>
+      </div>
+    </div>
+    <div id="resultContent"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  AI 智能简历分析系统 &middot; Powered by DeepSeek &middot; Deployed on Alibaba Cloud FC
+</div>
+
+<script>
+let selectedFile = null;
+let currentResumeId = null;
+let useAI = true;
+
+const API_BASE_KEY = 'resume_analyzer_api_url';
+
+function getApiBase() {
+  return localStorage.getItem(API_BASE_KEY) || document.getElementById('apiBaseUrl').value;
+}
+
+function saveApiUrl() {
+  const url = document.getElementById('apiBaseUrl').value.trim();
+  localStorage.setItem(API_BASE_KEY, url);
+  showStatus('uploadStatus', 'success', '✅ API 地址已保存');
+}
+
+function toggleAI() {
+  useAI = !useAI;
+  document.getElementById('aiToggle').classList.toggle('active', useAI);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(API_BASE_KEY);
+  if (saved) document.getElementById('apiBaseUrl').value = saved;
+
+  const zone = document.getElementById('uploadZone');
+  ['dragover', 'dragenter'].forEach(evt => {
+    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+  });
+  zone.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) {
+      handleFile({ target: { files: e.dataTransfer.files } });
+    }
+  });
+});
+
+function handleFileSelect(event) { handleFile(event); }
+
+function handleFile(event) {
+  const file = event.target.files[0] || event.dataTransfer.files[0];
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showStatus('uploadStatus', 'error', '❌ 仅支持 PDF 格式文件');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showStatus('uploadStatus', 'error', '❌ 文件大小超过 10MB 限制');
+    return;
+  }
+
+  selectedFile = file;
+  document.getElementById('fileName').textContent = '📎 ' + file.name;
+  document.getElementById('uploadBtn').disabled = false;
+  hideStatus('uploadStatus');
+}
+
+async function uploadResume() {
+  if (!selectedFile) return;
+
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.disabled = true;
+  showStatus('uploadStatus', 'loading', '⏳ 正在上传并解析简历...');
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    const resp = await fetch(`${getApiBase()}/api/resume/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await resp.json();
+
+    if (!result.success) {
+      showStatus('uploadStatus', 'error', '❌ ' + (result.error || '上传失败'));
+      uploadBtn.disabled = false;
+      return;
+    }
+
+    currentResumeId = result.data.resume_id;
+    const parseInfo = result.data.parse_result;
+    showStatus('uploadStatus', 'success',
+      '✅ 简历解析成功！共 ' + parseInfo.page_count + ' 页，' + parseInfo.char_count + ' 字符' +
+      (result.data.from_cache ? ' (来自缓存)' : ''));
+
+    document.getElementById('matchBtn').disabled = false;
+
+    if (result.data.extracted_info._error) {
+      showStatus('uploadStatus', 'warning',
+        '⚠️ 文本解析完成，但 AI 提取失败：' + result.data.extracted_info._error + '。请检查 API Key 配置。');
+      document.getElementById('matchBtn').disabled = false;
+    }
+
+    displayResumeInfo(result.data);
+  } catch (err) {
+    showStatus('uploadStatus', 'error', '❌ 网络错误: ' + err.message);
+    uploadBtn.disabled = false;
+  }
+}
+
+async function matchResume() {
+  if (!currentResumeId) return;
+
+  const jobDesc = document.getElementById('jobDescription').value.trim();
+  if (!jobDesc) {
+    showStatus('matchStatus', 'error', '❌ 请输入岗位需求描述');
+    return;
+  }
+
+  const matchBtn = document.getElementById('matchBtn');
+  matchBtn.disabled = true;
+  showStatus('matchStatus', 'loading', '⏳ 正在 AI 深度分析匹配度...');
+
+  try {
+    const resp = await fetch(`${getApiBase()}/api/resume/${currentResumeId}/match`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_description: jobDesc, use_ai: useAI }),
+    });
+    const result = await resp.json();
+
+    if (!result.success) {
+      showStatus('matchStatus', 'error', '❌ ' + (result.error || '匹配失败'));
+      matchBtn.disabled = false;
+      return;
+    }
+
+    showStatus('matchStatus', 'success', '✅ AI 分析完成！');
+    matchBtn.disabled = false;
+    displayFullReport(result.data);
+  } catch (err) {
+    showStatus('matchStatus', 'error', '❌ 网络错误: ' + err.message);
+    matchBtn.disabled = false;
+  }
+}
+
+// ---- Display: After Upload (resume info only) ----
+function displayResumeInfo(data) {
+  const info = data.extracted_info;
+  const card = document.getElementById('resultCard');
+  card.classList.remove('hidden');
+
+  const method = data.from_cache ? '来自缓存' : 'AI 提取';
+  document.getElementById('extractionMethod').textContent = '✨ 提取方式: ' + method;
+
+  let html = '';
+
+  // Resume summary
+  if (info.resume_summary) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>简历概要</h3>';
+    html += '<div class="analysis-text">' + escHtml(info.resume_summary) + '</div>';
+    html += '</div>';
+  }
+
+  // Basic info
+  html += '<div class="result-section">';
+  html += '<h3><span class="dot"></span>候选人信息</h3>';
+  html += '<div class="info-grid">';
+  html += infoItem('姓名', info.name);
+  html += infoItem('性别', info.gender);
+  html += infoItem('年龄', info.age ? info.age + ' 岁' : '');
+  html += infoItem('电话', info.phone);
+  html += infoItem('邮箱', info.email);
+  html += infoItem('地址', info.address);
+  html += infoItem('求职意向', info.job_intention);
+  html += infoItem('期望薪资', info.expected_salary);
+  html += infoItem('工作类型', info.job_type);
+  html += infoItem('期望城市', info.expected_city);
+  html += infoItem('工作年限', info.work_years != null ? info.work_years + ' 年' : '');
+  html += infoItem('学历', info.education);
+  html += infoItem('学校', info.school);
+  html += infoItem('专业', info.major);
+  html += infoItem('毕业年份', info.graduation_year);
+  html += '</div></div>';
+
+  // Skills
+  if (info.skills && info.skills.length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>技能标签</h3>';
+    html += '<div class="tag-list">';
+    info.skills.forEach(s => { html += '<span class="tag tag-skill">' + escHtml(s) + '</span>'; });
+    html += '</div></div>';
+  }
+
+  // Skill levels
+  if (info.skill_levels && Object.keys(info.skill_levels).length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>技能熟练度</h3>';
+    html += '<div class="tag-list">';
+    for (const [skill, level] of Object.entries(info.skill_levels)) {
+      html += '<span class="tag tag-match">' + escHtml(skill) + ': ' + escHtml(level) + '</span>';
+    }
+    html += '</div></div>';
+  }
+
+  // Languages & Certificates
+  if ((info.languages && Object.keys(info.languages).length > 0) || (info.certificates && info.certificates.length > 0)) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>语言与证书</h3>';
+    if (info.languages && Object.keys(info.languages).length > 0) {
+      html += '<div class="tag-list" style="margin-bottom:8px;">';
+      for (const [lang, level] of Object.entries(info.languages)) {
+        html += '<span class="tag tag-neutral">' + escHtml(lang) + ': ' + escHtml(level) + '</span>';
+      }
+      html += '</div>';
+    }
+    if (info.certificates && info.certificates.length > 0) {
+      html += '<div class="tag-list">';
+      info.certificates.forEach(c => { html += '<span class="tag tag-match">' + escHtml(c) + '</span>'; });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Work experience
+  if (info.work_experience && info.work_experience.length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>工作经历</h3>';
+    info.work_experience.forEach(w => {
+      html += '<div class="exp-card">';
+      html += '<div class="exp-title">' + escHtml(w.position || w.role || '') + ' @ ' + escHtml(w.company || '') + '</div>';
+      html += '<div class="exp-subtitle">' + escHtml(w.duration || '') + '</div>';
+      html += '<div class="exp-desc">' + escHtml(w.description || '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Project experience
+  if (info.project_experience && info.project_experience.length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>项目经历</h3>';
+    info.project_experience.forEach(p => {
+      html += '<div class="exp-card">';
+      html += '<div class="exp-title">' + escHtml(p.name || '') + '</div>';
+      html += '<div class="exp-subtitle">' + escHtml(p.role || '') + '</div>';
+      html += '<div class="exp-desc">' + escHtml(p.description || '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Self-evaluation
+  if (info.self_evaluation || (info.strengths && info.strengths.length > 0)) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>自我评价与优势</h3>';
+    if (info.self_evaluation) {
+      html += '<div class="analysis-text">' + escHtml(info.self_evaluation) + '</div>';
+    }
+    if (info.strengths && info.strengths.length > 0) {
+      html += '<ul class="bullet-list" style="margin-top:10px;">';
+      info.strengths.forEach(s => { html += '<li class="strength">✅ ' + escHtml(s) + '</li>'; });
+      html += '</ul>';
+    }
+    html += '</div>';
+  }
+
+  // JSON Debug
+  html += buildDebugSection(data);
+
+  document.getElementById('resultContent').innerHTML = html;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ---- Display: Full Report (after matching) ----
+function displayFullReport(data) {
+  const match = data.match_result;
+  const card = document.getElementById('resultCard');
+  card.classList.remove('hidden');
+  document.getElementById('extractionMethod').textContent = '';
+
+  const score = match.composite_score || 0;
+  const kw = match.keyword_match || {};
+  const exp = match.experience_match || {};
+  const ai = (match.ai_match && match.ai_match.ai_analysis) || null;
+  const aiScore = match.ai_match ? match.ai_match.ai_score : 0;
+
+  let html = '';
+
+  // Score Dashboard
+  html += '<div class="score-dashboard">';
+  html += scoreCard('综合评分', Math.round(score), 'overall', score >= 70 ? '高度匹配' : score >= 40 ? '部分匹配' : '低匹配');
+  html += scoreCard('技能匹配', ai ? (ai.skill_score || 0) : Math.round(kw.skill_match_rate || 0), 'skill', '');
+  html += scoreCard('经验相关', Math.round(exp.work_years_score || 0), 'exp', '');
+  html += scoreCard('教育背景', Math.round(exp.education_score || 0), 'edu', '');
+  html += '</div>';
+
+  // Candidate level
+  if (ai && ai.candidate_level) {
+    html += '<div style="margin-bottom:20px;"><span class="level-badge">' + escHtml(ai.candidate_level) + '</span></div>';
+  }
+
+  // AI Detailed Analysis
+  if (ai && !ai.error) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>AI 综合评估</h3>';
+    html += '<div class="recommendation-box">' + escHtml(ai.recommendation || '') + '</div>';
+    html += '</div>';
+
+    // Dimension details
+    if (ai.skill_match_detail || ai.experience_match_detail || ai.education_match_detail) {
+      html += '<div class="result-section">';
+      html += '<h3><span class="dot"></span>维度详细分析</h3>';
+      if (ai.skill_match_detail) {
+        html += '<div class="analysis-text" style="margin-bottom:10px;"><strong>💡 技能维度</strong><br>' + escHtml(ai.skill_match_detail) + '</div>';
+      }
+      if (ai.experience_match_detail) {
+        html += '<div class="analysis-text" style="margin-bottom:10px;"><strong>💼 经验维度</strong><br>' + escHtml(ai.experience_match_detail) + '</div>';
+      }
+      if (ai.education_match_detail) {
+        html += '<div class="analysis-text"><strong>🎓 教育维度</strong><br>' + escHtml(ai.education_match_detail) + '</div>';
+      }
+      html += '</div>';
+    }
+  } else if (!ai) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>经验匹配分析</h3>';
+    html += '<div class="analysis-text">' + escHtml(exp.analysis || '暂无分析') + '</div>';
+    html += '</div>';
+  }
+
+  // Keywords
+  html += '<div class="result-section">';
+  html += '<h3><span class="dot"></span>关键词匹配</h3>';
+
+  // Use AI keywords if available, otherwise use regex-based ones
+  const matchedKw = (ai && ai.matched_keywords_ai && ai.matched_keywords_ai.length > 0)
+    ? ai.matched_keywords_ai : (kw.matched_keywords || []);
+  const missingKw = (ai && ai.missing_keywords_ai && ai.missing_keywords_ai.length > 0)
+    ? ai.missing_keywords_ai : (kw.missing_keywords || []);
+
+  if (matchedKw.length > 0) {
+    html += '<p style="font-size:13px;color:var(--success);font-weight:600;margin-bottom:8px;">✅ 匹配关键词 (' + matchedKw.length + ')</p>';
+    html += '<div class="tag-list" style="margin-bottom:12px;">';
+    matchedKw.forEach(k => { html += '<span class="tag tag-match">' + escHtml(k) + '</span>'; });
+    html += '</div>';
+  }
+  if (missingKw.length > 0) {
+    html += '<p style="font-size:13px;color:var(--error);font-weight:600;margin-bottom:8px;">❌ 缺失关键词 (' + missingKw.length + ')</p>';
+    html += '<div class="tag-list">';
+    missingKw.forEach(k => { html += '<span class="tag tag-miss">' + escHtml(k) + '</span>'; });
+    html += '</div>';
+  }
+  if (matchedKw.length === 0 && missingKw.length === 0) {
+    html += '<p style="font-size:13px;color:var(--text-secondary);">暂无关键词数据</p>';
+  }
+  html += '</div>';
+
+  // Strengths & Gaps
+  if (ai && (ai.strengths || ai.gaps)) {
+    html += '<div class="result-section">';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+
+    if (ai.strengths && ai.strengths.length > 0) {
+      html += '<div><h3 style="color:var(--success);">✅ 核心优势</h3><ul class="bullet-list">';
+      ai.strengths.forEach(s => { html += '<li class="strength">' + escHtml(s) + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    if (ai.gaps && ai.gaps.length > 0) {
+      html += '<div><h3 style="color:var(--error);">⚠️ 主要差距</h3><ul class="bullet-list">';
+      ai.gaps.forEach(g => { html += '<li class="gap">' + escHtml(g) + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  // Interview suggestions
+  if (ai && ai.interview_suggestions && ai.interview_suggestions.length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>面试建议方向</h3>';
+    html += '<ul class="bullet-list">';
+    ai.interview_suggestions.forEach((s, i) => { html += '<li class="suggestion">' + (i + 1) + '. ' + escHtml(s) + '</li>'; });
+    html += '</ul></div>';
+  }
+
+  // Job keywords
+  if (match.job_keywords && match.job_keywords.length > 0) {
+    html += '<div class="result-section">';
+    html += '<h3><span class="dot"></span>岗位关键词库</h3>';
+    html += '<div class="tag-list">';
+    match.job_keywords.forEach(k => { html += '<span class="tag tag-neutral">' + escHtml(k) + '</span>'; });
+    html += '</div></div>';
+  }
+
+  // JSON Debug
+  html += buildDebugSection(data);
+
+  document.getElementById('resultContent').innerHTML = html;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+function buildDebugSection(data) {
+  return '<div class="debug-section">' +
+    '<div class="debug-toggle" onclick="toggleDebug(this)">▶ 展开原始 JSON 数据</div>' +
+    '<pre class="debug-content hidden">' + escHtml(JSON.stringify(data, null, 2)) + '</pre>' +
+    '</div>';
+}
+
+function scoreCard(label, value, cls, sub) {
+  return '<div class="score-card ' + cls + '">' +
+    '<div class="score-value">' + value + '</div>' +
+    '<div class="score-label">' + escHtml(label) + (sub ? ' · ' + escHtml(sub) : '') + '</div>' +
+    '</div>';
+}
+
+function infoItem(label, value) {
+  const v = value || value === 0 ? value : '<span style="color:#cbd5e1;">--</span>';
+  return '<div class="info-item"><div class="info-label">' + escHtml(label) + '</div><div class="info-value">' + v + '</div></div>';
+}
+
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status-bar ' + type;
+  el.innerHTML = type === 'loading' ? '<span class="spinner"></span>' + msg : msg;
+  el.classList.remove('hidden');
+}
+
+function hideStatus(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+function clearResults() {
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('resultContent').innerHTML = '';
+}
+
+function toggleDebug(el) {
+  const pre = el.nextElementSibling;
+  const isHidden = pre.classList.contains('hidden');
+  pre.classList.toggle('hidden');
+  el.innerHTML = isHidden ? '▼ 收起原始 JSON 数据' : '▶ 展开原始 JSON 数据';
+}
+
+function escHtml(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

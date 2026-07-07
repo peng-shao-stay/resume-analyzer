@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment / Secrets
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alibaba Cloud FC
+.fc/
+.fcignore
+
+# Vendored Python packages (install via pip instead)
+jianliagent/code/flask/
+jianliagent/code/flask-*.dist-info/
+jianliagent/code/werkzeug/
+jianliagent/code/werkzeug-*.dist-info/
+jianliagent/code/redis/
+jianliagent/code/redis-*.dist-info/
+jianliagent/code/requests/
+jianliagent/code/requests-*.dist-info/
+jianliagent/code/pdfplumber/
+jianliagent/code/pdfplumber-*.dist-info/
+jianliagent/code/pdfminer/
+jianliagent/code/pdfminer_six-*.dist-info/
+jianliagent/code/pillow-*.dist-info/
+jianliagent/code/PIL/
+jianliagent/code/jinja2/
+jianliagent/code/jinja2-*.dist-info/
+jianliagent/code/markupsafe/
+jianliagent/code/markupsafe-*.dist-info/
+jianliagent/code/itsdangerous/
+jianliagent/code/itsdangerous-*.dist-info/
+jianliagent/code/click/
+jianliagent/code/click-*.dist-info/
+jianliagent/code/blinker/
+jianliagent/code/blinker-*.dist-info/
+jianliagent/code/flask_cors/
+jianliagent/code/flask_cors-*.dist-info/
+jianliagent/code/certifi/
+jianliagent/code/certifi-*.dist-info/
+jianliagent/code/cffi/
+jianliagent/code/cffi-*.dist-info/
+jianliagent/code/cryptography/
+jianliagent/code/cryptography-*.dist-info/
+jianliagent/code/urllib3/
+jianliagent/code/urllib3-*.dist-info/
+jianliagent/code/charset_normalizer/
+jianliagent/code/charset_normalizer-*.dist-info/
+jianliagent/code/idna/
+jianliagent/code/idna-*.dist-info/
+jianliagent/code/pypdfium2/
+jianliagent/code/pypdfium2-*.dist-info/
+jianliagent/code/pypdfium2_cfg/
+jianliagent/code/pypdfium2_cli/
+jianliagent/code/pypdfium2_raw/
+jianliagent/code/pycparser/
+jianliagent/code/pycparser-*.dist-info/
+jianliagent/code/colorama/
+jianliagent/code/colorama-*.dist-info/
+jianliagent/code/bin/
+jianliagent/code/*.pyd
+
+# Temp / Backup
+jianliagent_178339*/
+s init devsapp/
+
+# Logs
+*.log
