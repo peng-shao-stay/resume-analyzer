@@ -16,16 +16,13 @@
 # ------------------------------------
 edition: 1.0.0
 name: resume-analyzer-app
-# access 是当前应用所需要的密钥信息配置：
-# 密钥配置可以参考：https://www.serverless-devs.com/serverless-devs/command/config
-# 密钥使用顺序可以参考：https://www.serverless-devs.com/serverless-devs/tool#密钥使用顺序与规范
-access: "{{ access }}"
+access: "default"
 
 vars: # 全局变量
-  region: "{{ region }}"
+  region: "cn-beijing"
   service:
-    name: "{{ serviceName }}"
-    description: 'Serverless Devs Web Framework Service'
+    name: "resume-analyzer-service"
+    description: 'Resume Analyzer Service'
 
 services:
   framework: # 业务名称/模块名称
@@ -47,14 +44,14 @@ services:
       region: ${vars.region}         # 关于变量的使用方法，可以参考：https://www.serverless-devs.com/serverless-devs/yaml#变量赋值
       service: ${vars.service}
       function:
-        name: "{{ functionName }}"
+        name: "resume-analyzer"
         description: 'AI Resume Analyzer - Intelligent Resume Analysis System'
         codeUri: './code'
         runtime: python3.10
         handler: index.app
         timeout: 120
         environmentVariables:
-          DEEPSEEK_API_KEY: "{{ envDeepSeekApiKey }}"
+          DEEPSEEK_API_KEY: "${env(DEEPSEEK_API_KEY)}"
           DEEPSEEK_MODEL: "deepseek-chat"
       triggers:
         - name: httpTrigger
