@@ -1,20 +1,20 @@
 """
 PDF 简历解析模块：提取文本、清洗、结构化分段。
-兼容多页 PDF，处理扫描件降级方案。
+使用 pypdf（纯 Python，无 C 依赖，跨平台兼容）。
 """
 import io
 import re
-import pdfplumber
+from pypdf import PdfReader
 
 
 def extract_text_from_pdf(file_data: bytes) -> str:
     """从 PDF 二进制数据中提取纯文本，支持多页。"""
     text_parts = []
-    with pdfplumber.open(io.BytesIO(file_data)) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text_parts.append(page_text)
+    reader = PdfReader(io.BytesIO(file_data))
+    for page in reader.pages:
+        page_text = page.extract_text()
+        if page_text:
+            text_parts.append(page_text)
     return "\n".join(text_parts)
 
 
@@ -22,7 +22,7 @@ def clean_text(raw_text: str) -> str:
     """清洗提取的文本：去除乱码字符、合并多余空白、统一换行。"""
     # 保留中英文、数字、常用标点符号和换行
     text = re.sub(
-        r'[^\u4e00-\u9fa5a-zA-Z0-9\s.,;:!?@#()+\-*/=：，。；！？《》【】（）／＋－＊＝％＠＃￥…—\n]',
+        r'[^一-龥a-zA-Z0-9\s.,;:!?@#()+\-*/=：，。；！？《》【】（）／＋－＊＝％＠＃￥…—\n]',
         '', raw_text
     )
     # 合并连续空行
@@ -53,7 +53,7 @@ def structure_resume_text(text: str) -> str:
 
 def parse_resume(file_data: bytes) -> dict:
     """完整的简历解析流程：PDF → 文本提取 → 清洗 → 结构化。
-    
+
     Returns:
         dict: {
             "raw_text": str,        # 原始文本
@@ -63,24 +63,23 @@ def parse_resume(file_data: bytes) -> dict:
             "char_count": int,      # 清洗后字符数
         }
     """
+    reader = PdfReader(io.BytesIO(file_data))
+    page_count = len(reader.pages)
+
     raw = extract_text_from_pdf(file_data)
     if not raw.strip():
         return {
             "raw_text": "",
             "clean_text": "",
             "structured_text": "",
-            "page_count": 0,
+            "page_count": page_count,
             "char_count": 0,
             "error": "PDF 无可提取文本，可能是扫描件或图片型 PDF",
         }
-    
+
     cleaned = clean_text(raw)
     structured = structure_resume_text(cleaned)
-    
-    # 获取页数
-    with pdfplumber.open(io.BytesIO(file_data)) as pdf:
-        page_count = len(pdf.pages)
-    
+
     return {
         "raw_text": raw.strip(),
         "clean_text": cleaned,
