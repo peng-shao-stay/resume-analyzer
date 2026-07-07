@@ -33,8 +33,6 @@ services:
     actions:       # 自定义执行逻辑，关于actions 的使用，可以参考：https://www.serverless-devs.com/serverless-devs/yaml#行为描述
       pre-deploy: # 在deploy之前运行
         - component: fc build --use-docker               # Docker构建，生成Linux兼容依赖包
-        - run: pip3 install -r requirements.txt -t .      # 本地备选：Windows环境需Docker构建
-          path: ./code
 #        - plugin: myplugin                               # 与运行的插件 （可以通过s cli registry search --type Plugin 获取组件列表）
 #          args:                                          # 插件的参数信息
 #            testKey: testValue
