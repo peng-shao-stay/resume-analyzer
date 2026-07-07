@@ -4,7 +4,7 @@ AI 驱动的简历解析与岗位匹配评估系统。上传 PDF 简历，输入
 
 ## 在线演示
 
-> 前端页面: `https://zsasa.github.io/resume-analyzer/`  
+> 前端页面: `https://peng-shao-stay.github.io/resume-analyzer/`  
 > 后端需部署至阿里云函数计算 FC，见下方[部署说明](#部署)。
 
 ## 功能特性
@@ -68,7 +68,7 @@ AI 驱动的简历解析与岗位匹配评估系统。上传 PDF 简历，输入
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/zsasa/resume-analyzer.git
+git clone https://github.com/peng-shao-stay/resume-analyzer.git
 cd resume-analyzer
 
 # 2. 创建虚拟环境
@@ -112,7 +112,7 @@ s deploy
 1. Push 代码到 GitHub 仓库的 `main` 分支
 2. 在仓库 Settings → Pages 中启用 GitHub Pages
 3. Source 选择 "Deploy from a branch"，分支选 `main`，目录选 `/ (root)`
-4. 前端页面将部署到 `https://zsasa.github.io/resume-analyzer/`
+4. 前端页面将部署到 `https://peng-shao-stay.github.io/resume-analyzer/`
 5. 打开页面后在 API 地址栏填入部署后的后端 URL
 
 ## 环境变量
